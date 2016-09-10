@@ -1,0 +1,35 @@
+import clr
+clr.AddReference('System.Data')
+clr.AddReference('System.Web.Extensions')
+import System
+import datetime
+from System import DateTime, Decimal, Boolean
+from System.Data import DataSet, DataTable
+from System.Text import StringBuilder
+from System.IO import StringReader, StreamReader, StreamWriter, MemoryStream, SeekOrigin
+from System.Net import HttpWebRequest, CredentialCache
+from System.Web.Script.Serialization import JavaScriptSerializer
+from Spotfire.Dxp.Data import DataType, DataTableSaveSettings
+from Spotfire.Dxp.Data.Import import TextFileDataSource, TextDataReaderSettings
+
+#Uniue identifier that will be added to the URI
+propertyNumber = Document.Properties["SubjectPropertyNumber"]
+
+# Build URI
+uri = "http://drillingapi/v2/Wells?propertynumbers=" + propertyNumber + "&$format=json"
+
+#Submit web request
+webRequest = HttpWebRequest.Create(uri)
+webRequest.Credentials = CredentialCache.DefaultNetworkCredentials
+response = webRequest.GetResponse()
+streamReader = StreamReader(response.GetResponseStream())
+
+#Get json data & deserialize
+jsonData = streamReader.ReadToEnd()
+js = JavaScriptSerializer()
+
+#add data
+dataDict = js.Deserialize(jsonData,object)
+
+#print dataDict to console
+print "dataDict = ", dataDict
