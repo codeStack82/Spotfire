@@ -1,0 +1,46 @@
+#Print start time
+startDateTime = datetime.datetime.now()
+print "\nStart Time: ", startDateTime, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+
+
+try:
+    # Build URI
+    uri = "http://xxx/xxx/xx/xxx=" + asset + "&objective=" + objective + "&measureddepth=" + measuredDepth + "&trueVerticalDepth=" + trueVerticalDepth + "&Latitude=" + latitude + "&longitude=" + longitude + "&Distance=" + distance + "&Operator=" + operator + "&$format=json"
+  
+    #create web request
+    webRequest = HttpWebRequest.Create(uri)
+    webRequest.Credentials = CredentialCache.DefaultNetworkCredentials
+
+    #Get response & deserialize json obj
+    response = webRequest.GetResponse()
+    streamReader = StreamReader(response.GetResponseStream())
+    jsonData = streamReader.ReadToEnd()
+    js = JavaScriptSerializer()
+    similarDataDict = js.Deserialize(jsonData,object)
+
+    # build a string representing the data in tab-delimited text format
+    dataTable = "\t".join(["PropertyNumber", "WellName", "AssetName", "ObjectiveName", "Latitude", "Longitude", "MeasuredDepth", "TrueVerticalDepth", "Distance", "Operator", "RigName", "OriginalRigRelease", "OriginalSpudDate", "HasTelemetry"]) + "\r\n"
+
+    #Similar Wells
+    for well in similarDataDict:
+        dataTable += '\t'.join([str(well["PropertyNumber"]), str(well["WellName"]), str(well["AssetName"]), str(well["ObjectiveName"]), str(well["Latitude"]), str(well["Longitude"]), str(well["MeasuredDepth"]), str(well["TrueVerticalDepth"]), str(well["Distance"]), str(well["Operator"]), str(well["RigName"]), str(well["OriginalRigRelease"]), str(well["OriginalSpudDate"]), str(well["HasTelemetry"])]) + "\r\n"
+
+    # make a stream from the string
+    stream = MemoryStream()
+    writer = StreamWriter(stream)
+    writer.Write(dataTable)
+    writer.Flush()
+    stream.Seek(0, SeekOrigin.Begin)
+
+    print dataTable
+
+except:
+    print "Encountered error....!"
+
+#Print end & total time
+EndDateTime = datetime.datetime.now()
+print "\nEnd Time: ", EndDateTime, "\n"
+
+totalTime = EndDateTime - startDateTime
+print ">>>> Similar well(s) total time: ",totalTime
+raw_input()
