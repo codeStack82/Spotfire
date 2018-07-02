@@ -1,0 +1,46 @@
+#Create new Anaconda Enviroment
+	#https://medium.com/data-science-in-practice/saving-the-environment-with-anaconda-ad68e603d8c5
+	#https://conda.io/docs/user-guide/tasks/manage-environments.html
+	#https://stackoverflow.com/questions/13270877/how-to-manually-install-a-pypi-module-without-pip-easy-install
+
+	#List conda packages 
+		conda list
+
+	#List conda env's
+		conda env list
+
+	#Get conda info
+		conda info
+
+	#Check Python type
+		python --version
+
+	#ignore ssl certs errors
+		conda config --set ssl_verify False
+
+	#pip ssl issue
+		pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org <pckg name>
+
+
+#Step 1 ) Create new directory
+
+	mkdir python_dir_name
+
+#Step 2) Create new python enviroment
+
+	conda create --name python_env_v1 python=3.5.0
+
+#Step 3) active enviroment or deactivate enviroment
+	activate python_env_v1
+		or
+	deactivate python_env_v1	
+
+#Step 4) install packages into the new env
+	-need to install using pip must cd into the env where the env was created
+	-ex: ..anaconda\env\py_env_v1\pip install <package>
+
+#Step 5) Export enviroment to yaml
+	conda env export environment.yaml	
+
+
+
