@@ -1,0 +1,145 @@
+import System
+import clr
+clr.AddReference("System.Windows.Forms")
+import sys
+import datetime
+from sys import exit
+from Spotfire.Dxp.Data import *
+from System.Windows.Forms import FolderBrowserDialog, MessageBox, MessageBoxButtons, DialogResult
+from Spotfire.Dxp.Data.Export import DataWriterTypeIdentifiers
+from System.IO import Directory, Path
+from System.IO import File, FileStream, FileMode
+from Spotfire.Dxp.Application import DocumentMetadata
+
+
+exportMessage = ''
+
+#Get Subject well info for export 
+def getSubjectWellInfo(table):
+	# Create cursor reference objects to subject well info
+	well_ValueCursor = DataValueCursor.CreateFormatted(table.Columns["wellname"])
+	district_ValueCursor = DataValueCursor.CreateFormatted(table.Columns["district"])
+	pn_ValueCursor = DataValueCursor.CreateFormatted(table.Columns["wellidc"])
+
+	#Store the subject well info
+	wellInfo = []
+
+	for row in table.GetRows(well_ValueCursor, district_ValueCursor, pn_ValueCursor ):
+		wellInfo.append(district_ValueCursor.CurrentValue)
+		wellInfo.append(well_ValueCursor.CurrentValue)
+		wellInfo.append(pn_ValueCursor.CurrentValue)
+
+		#print(wellInfo)
+	return wellInfo
+
+#  Export file
+def exportFile(roadmapTable, saveDirectory):
+
+	# Get Time Stamp
+	timeUpdated = datetime.datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+
+	try:
+		saved_dt= datetime.datetime.now().strftime(" %m-%d-%Y %H:%M")
+
+		# File Information
+		fileName = wellName + " - ROADMAP_" + saved_dt
+		fileType = '.xls'
+		fileDetails = fileName + fileType
+
+		allColumnNames = []
+		allRows = Document.Data.AllRows.GetSelection(roadmapTable).AsIndexSet()
+
+		for column in roadmapTable.Columns:
+			allColumnNames.Add(column.Name)
+
+		# Create writer and data stream objects
+		writer = Document.Data.CreateDataWriter(DataWriterTypeIdentifiers.ExcelXlsDataWriter)
+		stream = File.OpenWrite(Path.Combine(saveDirectory, fileDetails))
+
+		writer.Write(stream, roadmapTable, allRows, allColumnNames)
+
+		# If file is successfully written
+		exportMessage = 'The Roadmap files have been successfully exported\n' + 'Time Saved: ' + timeUpdated + '\nLocation: ' + saveDirectory
+		Document.Properties['exportMessage'] = exportMessage
+		print("The files have been written successfully!\n" + "Error: " + e)
+
+	except IOError, e:
+		MessageBox.Show("The Roadmap export has halted", "RoadMap Export", MessageBoxButtons.OK)
+		exportMessage = 'The Roadmap files have been not successfully exported!\n'
+		Document.Properties['exportMessage'] = exportMessage
+		print("There has been a file export error.")
+
+	finally:
+		stream.Close()
+		stream.Dispose()
+		
+
+#Subject well data table reference
+table = Document.Data.Tables['SubjectWellInfo']
+
+#Get subject well information
+subjectWellInfo = getSubjectWellInfo(table)
+districtName = subjectWellInfo[0]
+wellName = subjectWellInfo[1]
+pn = subjectWellInfo[2]
+
+#Confirm default or new file save location
+confirmSaveLocation = MessageBox.Show("Would you like to use the default export location?" , "RoadMap Export", MessageBoxButtons.YesNo)
+
+#Save files to default location
+if (confirmSaveLocation == DialogResult.Yes):
+	
+	#Parent directory - Value comes from doc property
+	dirParent = Document.Properties['exportFileLocation'] 
+	subDirectory_Dist =  Path.Combine(dirParent,districtName)   #dirParent + "\\" + districtName
+
+	# Check if district directory exists - if not creates district directory
+	if not Directory.Exists(subDirectory_Dist):
+		Directory.CreateDirectory(subDirectory_Dist)
+		Directory.SetCurrentDirectory(subDirectory_Dist)
+		print("Created & Nav. to Dir: " + subDirectory_Dist)
+	else:
+		Directory.SetCurrentDirectory(subDirectory_Dist)
+		print("Nav to Dir: " + subDirectory_Dist)
+
+	# Check if well Directory exists - if not creates district directory
+	subDirectory_well = Path.Combine(subDirectory_Dist, wellName)
+
+	if not Directory.Exists(subDirectory_well):
+		Directory.CreateDirectory(subDirectory_well)
+		Directory.SetCurrentDirectory(subDirectory_well)
+		print("Created & Nav. to Dir: " + subDirectory_well)
+
+	else:
+		Directory.SetCurrentDirectory(subDirectory_well)
+		print("Nav to Dir: " + subDirectory_well)
+
+	# Export files
+	roadmapTable =  Document.Data.Tables['roadmap']
+	exportFile(roadmapTable, subDirectory_well)
+	print("Saved files to new location.\n" + "\tPath: " + subDirectory_well)
+
+
+# Save file to a new user defined location
+elif(confirmSaveLocation == DialogResult.No):
+
+	confirmSaveLocation = MessageBox.Show("Would you like to save the files to a new location?" , "RoadMap Export", MessageBoxButtons.YesNo)
+
+	if (confirmSaveLocation == DialogResult.Yes):
+		roadmapTable =  Document.Data.Tables['roadmap']
+		
+		SaveFile = FolderBrowserDialog()
+		SaveFile.ShowDialog()
+		newSavePath = SaveFile.SelectedPath
+		# print(newSavePath)
+
+		# Export files
+		roadmapTable =  Document.Data.Tables['roadmap']
+		#exportFile(newSavePath, newSavePath)
+		print("Saved files to new location.\n" + "\tPath: " + newSavePath)
+	else:
+		MessageBox.Show("File export operation has been halted" , "RoadMap Export")
+print(exportMessage)
+
+
+	
